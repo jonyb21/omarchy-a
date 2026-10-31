@@ -262,13 +262,13 @@ jobs:
             --output out/release
           python -m release.j71b.audit out/release/j71b-checkm8-pongo.toml
           grep -n device out/release/j71b-checkm8-pongo.toml || true
-          python -c "import pathlib,re; p=pathlib.Path('out/release'); t=(p/'j71b-checkm8-pongo.toml').read_text(); n=re.sub(r'(?m)^(\"?device\"?\s*=\s*)\"j71b\"', r'\"d101\"', t); assert n!=t; (p/'d101-checkm8-pongo.toml').write_text(n)"
+          python ci/d101-manifest.py out/release
           (zstd -dc out/release/rootfs.tar.zst | tar -t | grep 'dtb/' > out/release/rootfs-dtbs.txt) || true
           cat out/release/rootfs-dtbs.txt
           grep -q 't8010-d101.dtb$' out/release/rootfs-dtbs.txt
           orchard resolve out/release/index.toml
           python -m release.publish --tag "$TAG" --release-dir out/release --output out/publication
-          cp out/release/rootfs.json out/release/build-receipt.json out/publication/
+          cp out/release/rootfs.json out/release/build-receipt.json out/release/d101-checkm8-pongo.toml out/release/rootfs-dtbs.txt out/publication/
           git archive --format=tar.gz -o out/publication/omarchy-linux-source.tar.gz HEAD
           (cd out/publication && sha256sum ./* > ../SHA256SUMS && mv ../SHA256SUMS .)
       - name: Attest public build
