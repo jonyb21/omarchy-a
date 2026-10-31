@@ -7,7 +7,7 @@ set -euo pipefail
 }
 # The tools are orchard's current main; the release receipt records its commit.
 if [[ ! -f .orchard/pyproject.toml ]]; then
-  git clone --quiet --depth 1 --branch "${ORCHARD_REF:-main}" https://github.com/OrchardLinux/orchard.git .orchard
+  git clone --quiet --depth 1 --branch "${ORCHARD_REF:-main}" "${ORCHARD_URL:-https://github.com/OrchardLinux/orchard.git}" .orchard
 fi
 echo "orchard $(git -C .orchard rev-parse HEAD)"
 python3 -m venv .venv
@@ -18,11 +18,11 @@ if [[ "${1:-}" == --tools-only ]]; then exit 0; fi
 mkdir -p out/downloads
 base="https://github.com/OrchardLinux/orchard/releases/download/$HARDWARE_TAG"
 if [[ -n "${HARDWARE_ARTIFACT_DIR:-}" ]]; then
-  cp "$HARDWARE_ARTIFACT_DIR/j71b-components.tar.gz" "$HARDWARE_ARTIFACT_DIR/SHA256SUMS" out/downloads/
+  cp "$HARDWARE_ARTIFACT_DIR/${COMPONENT_BUNDLE:-j71b-components.tar.gz}" "$HARDWARE_ARTIFACT_DIR/SHA256SUMS" out/downloads/
 else
-  curl -fL --retry 3 "$base/j71b-components.tar.gz" -o out/downloads/j71b-components.tar.gz
+  curl -fL --retry 3 "$base/${COMPONENT_BUNDLE:-j71b-components.tar.gz}" -o out/downloads/${COMPONENT_BUNDLE:-j71b-components.tar.gz}
   curl -fL --retry 3 "$base/SHA256SUMS" -o out/downloads/SHA256SUMS
 fi
-grep -Eq ' (\./)?j71b-components.tar.gz$' out/downloads/SHA256SUMS
-(cd out/downloads && grep -E ' (\./)?j71b-components.tar.gz$' SHA256SUMS | sha256sum --check --strict)
-tar -xzf out/downloads/j71b-components.tar.gz -C out
+grep -Fq "${COMPONENT_BUNDLE:-j71b-components.tar.gz}" out/downloads/SHA256SUMS
+(cd out/downloads && grep -F "${COMPONENT_BUNDLE:-j71b-components.tar.gz}" SHA256SUMS | sha256sum --check --strict)
+tar -xzf out/downloads/${COMPONENT_BUNDLE:-j71b-components.tar.gz} -C out
