@@ -266,7 +266,8 @@ jobs:
           (zstd -dc out/release/rootfs.tar.zst | tar -t | grep 'dtb/' > out/release/rootfs-dtbs.txt) || true
           cat out/release/rootfs-dtbs.txt
           grep -q 't8010-d101.dtb$' out/release/rootfs-dtbs.txt
-          orchard resolve out/release/index.toml
+          orchard resolve --profile j71b out/release/index.toml
+          orchard resolve --profile d101 out/release/d101-checkm8-pongo.toml
           python -m release.publish --tag "$TAG" --release-dir out/release --output out/publication
           cp out/release/rootfs.json out/release/build-receipt.json out/release/d101-checkm8-pongo.toml out/release/rootfs-dtbs.txt out/publication/
           git archive --format=tar.gz -o out/publication/omarchy-linux-source.tar.gz HEAD
