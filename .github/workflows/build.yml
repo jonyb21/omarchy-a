@@ -22,6 +22,9 @@ permissions:
 env:
   HARDWARE_TAG: ${{ inputs.hardware_tag || 'v0.1.10' }}
   HARDWARE_ARTIFACT_DIR: ${{ inputs.hardware_run_id != '' && 'out/downloads/hardware' || '' }}
+  ORCHARD_URL: https://github.com/jonyb21/orchard.git
+  ORCHARD_REF: d101
+  COMPONENT_BUNDLE: apple-16k-components.tar.gz
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -225,14 +228,14 @@ jobs:
           HARDWARE_RUN_ID: ${{ inputs.hardware_run_id }}
         run: |
           [[ "$HARDWARE_RUN_ID" =~ ^[0-9]+$ ]]
-          gh run watch "$HARDWARE_RUN_ID" --repo OrchardLinux/orchard --interval 20 --exit-status
+          gh run watch "$HARDWARE_RUN_ID" --repo jonyb21/orchard --interval 20 --exit-status
       - name: Reuse verified first-release components
         if: inputs.hardware_run_id != ''
         uses: actions/download-artifact@v4
         with:
           name: orchard-release-assets
           path: out/downloads/hardware
-          repository: OrchardLinux/orchard
+          repository: jonyb21/orchard
           run-id: ${{ inputs.hardware_run_id }}
           github-token: ${{ github.token }}
       - run: bash ci/dependencies
@@ -252,12 +255,15 @@ jobs:
           python -m release.j71b.build --release "$VERSION" \
             --base out/base/rootfs.tar.gz --base-receipt out/base/rootfs.tar.gz.json \
             --modules-dir out/components/kernel/lib/modules --loader out/boot/m1n1.bin \
-            --kernel out/components/kernel/Image.gz --dtb out/components/kernel/j71b.dtb \
+            --kernel out/components/kernel/Image.gz --dtbs out/components/kernel/dtbs             --wpa-supplicant out/components/boot/wpa_supplicant --wpa-cli out/components/boot/wpa_cli             --iw out/components/boot/iw \
             --pongo out/components/quiet/pongo.bin --busybox out/components/boot/busybox \
             --dropbear out/components/boot/dropbear --dropbearkey out/components/boot/dropbearkey \
             --cursor-tools out/cursor --bluetooth-tools out/bluetooth --labwc-tools out/labwc \
             --output out/release
           python -m release.j71b.audit out/release/j71b-checkm8-pongo.toml
+          sed 's/^"device" = "j71b"$/"device" = "d101"/' out/release/j71b-checkm8-pongo.toml > out/release/d101-checkm8-pongo.toml
+          grep -q '"device" = "d101"' out/release/d101-checkm8-pongo.toml
+          tar -tf out/release/rootfs.tar.zst --zstd | grep -m1 'dtb/t8010-d101.dtb$'
           orchard resolve out/release/index.toml
           python -m release.publish --tag "$TAG" --release-dir out/release --output out/publication
           cp out/release/rootfs.json out/release/build-receipt.json out/publication/
